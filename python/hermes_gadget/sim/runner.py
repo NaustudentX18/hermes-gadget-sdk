@@ -53,6 +53,10 @@ BOARDS = {
     # A 1.9" 320x170 board with no audio hardware (e.g. LilyGO T-Display-S3).
     "sim-320x170-nospeaker": Board("sim-320x170-nospeaker", 320, 170, mic=False, speaker=False,
                                    scroll_buttons=False),
+    # M5Stick S3: 1.14" 135x240 ST7789P3 (portrait), swapped to 240x135 landscape in
+    # the firmware. Two buttons (KEY1=Talk, KEY2=Cancel), ES8311 codec, no touchscreen,
+    # no scroll buttons. Mirrors the m5stick-s3 port.
+    "sim-m5stick-s3": Board("sim-m5stick-s3", 240, 135, scroll_buttons=False),
 }
 
 
