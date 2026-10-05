@@ -20,6 +20,8 @@ namespace {
 #define HG_BOARD_NAME "m5stack-cores3"
 #elif CONFIG_HG_BOARD_T_DISPLAY_S3
 #define HG_BOARD_NAME "tdisplay-s3"
+#elif CONFIG_HG_BOARD_M5STICK_S3
+#define HG_BOARD_NAME "m5stick-s3"
 #elif CONFIG_HG_BOARD_WS_ESP32S3_LCD_154
 #define HG_BOARD_NAME "waveshare-esp32s3-lcd-154"
 #else
@@ -235,6 +237,50 @@ BoardConfig make() {
   b.buttons = {0, 14, -1, -1};
   b.talk_label = "BOOT";
   b.cancel_label = "B2";
+  return b;
+}
+#elif CONFIG_HG_BOARD_M5STICK_S3
+// M5Stack M5Stick S3: ESP32-S3-PICO-1-N8R8 (8 MB flash, 8 MB octal PSRAM),
+// 1.14" 135x240 ST7789P3 (portrait, swapped to landscape), ES8311 codec doing
+// both mic ADC and speaker DAC, M5PM1 PMIC, two buttons (KEY1=G11, KEY2=G12).
+// Pins: docs/hardware.md#m5stick-s3 (M5Stack's StickS3 schematic; the ST7789P3
+// panel has a 52x40 column/row offset per the runtime-verified Zephyr driver).
+BoardConfig make() {
+  BoardConfig b{};
+  b.name = kBoardName;
+  b.m5pm1 = true;
+  b.i2c = {47, 48, 400000};  // internal I2C: SDA=G47, SCL=G48 (BMI270 + M5PM1 + ES8311)
+  b.lcd.enabled = true;
+  b.lcd.controller = LcdController::St7789;
+  b.lcd.width = 240;   // portrait 135x240 swapped to landscape
+  b.lcd.height = 135;
+  b.lcd.swap_xy = true;
+  b.lcd.mirror_x = true;
+  b.lcd.mirror_y = false;
+  b.lcd.invert = true;
+  b.lcd.gap_x = 52;    // ST7789P3 column offset (verify on hardware, M4)
+  b.lcd.gap_y = 40;    // ST7789P3 row offset (verify on hardware, M4)
+  b.lcd.mosi = 39;
+  b.lcd.sclk = 40;
+  b.lcd.cs = 41;
+  b.lcd.dc = 45;
+  b.lcd.rst = 21;
+  b.lcd.backlight = 38;
+  // ES8311 (0x18) does both ADC (mic) and DAC (speaker) on one duplex I2S bus.
+  // I2S pins: MCLK=G18, BCLK=G17, LRCK=G15, DIN=G16 (S3→codec, speaker),
+  // DOUT=G14 (codec→S3, mic).
+  b.codec.enabled = true;
+  b.codec.mclk = 18;
+  b.codec.bclk = 17;
+  b.codec.ws = 15;
+  b.codec.dout = 16;  // ESP32 I2S TX → ES8311 DIN (speaker DAC)
+  b.codec.din = 14;   // ES8311 DOUT → ESP32 I2S RX (mic ADC)
+  b.codec.pa = -1;  // speaker amp enable is M5PM1 GPIO3, not a direct GPIO
+  b.codec.speaker = SpeakerCodec::Es8311;
+  b.codec.es8311_bidir = true;  // single ES8311 handles both directions
+  b.buttons = {11, 12, -1, -1};  // KEY1=G11 (talk), KEY2=G12 (cancel), active-low
+  b.talk_label = "KEY1";
+  b.cancel_label = "KEY2";
   return b;
 }
 #elif CONFIG_HG_BOARD_CUSTOM

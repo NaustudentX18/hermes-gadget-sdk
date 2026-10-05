@@ -68,6 +68,10 @@ struct CodecAudioConfig {
   float amp_supply_v = 5.0f;  // amplifier supply; the ES8311 driver sets its output level from it
   float mic_gain_db = 24.0f;
   SpeakerCodec speaker = SpeakerCodec::Es8311;
+  // A single ES8311 doing both mic ADC and speaker DAC on one device (e.g. the
+  // M5Stick S3). When set, the codec runs in BOTH mode and out()/in() return the
+  // same handle; the ES7210 ADC path is not used.
+  bool es8311_bidir = false;
 };
 
 // Capacitive touch on the I2C bus: hold to talk, tap, swipe down to cancel.
@@ -121,6 +125,7 @@ struct BoardConfig {
   bool axp2101 = false;
   bool axp_audio_supply = false;
   bool cores3 = false;
+  bool m5pm1 = false;  // M5Stack M5PM1 power-management companion (M5Stick S3)
   LatchPowerConfig latch_power;
   int status_led = -1;
   const char* talk_label = "TALK";

@@ -32,6 +32,7 @@ hgp::TouchInput g_touch;
 hgp::Wifi g_wifi;
 hgp::EspUpdater g_updater;
 hgp::AxpPower g_power;
+hgp::M5Pm1Power g_m5pm1;
 hgp::LatchPower g_latch_power;
 hgp::CoreS3Board g_cores3;
 hg::TouchGestures* g_gestures = nullptr;
@@ -187,6 +188,7 @@ extern "C" void app_main(void) {
   if (board.mic.enabled && g_mic.begin(board.mic)) hal.mic = &g_mic;
   if (board.speaker.enabled && g_speaker.begin(board.speaker)) hal.speaker = &g_speaker;
   if (board.axp2101 && g_power.begin(i2c_bus)) hal.power = &g_power;
+  if (board.m5pm1 && g_m5pm1.begin(i2c_bus)) hal.power = &g_m5pm1;
   const bool audio_power = peripherals_ready && (!board.axp_audio_supply || g_power.enable_audio_supply());
   if (!audio_power) ESP_LOGE(TAG, "audio supply unavailable");
   if (board.codec.enabled && audio_power && g_codec.begin(board.codec, i2c_bus)) {

@@ -18,6 +18,7 @@
 #include "board.hpp"
 #include "axp2101.hpp"
 #include "cores3.hpp"
+#include "m5pm1.hpp"
 #include "driver/i2c_master.h"
 #include "driver/i2s_std.h"
 #include "esp_codec_dev.h"
@@ -296,6 +297,20 @@ class AxpPower final : public hg::Power {
  private:
   i2c_master_dev_handle_t dev_ = nullptr;
   std::unique_ptr<hg::Axp2101> chip_;
+};
+
+// M5Stack M5PM1 power-management companion (M5Stick S3), at 0x6E on the
+// internal I2C bus. Battery voltage and power source come from the PMIC's own
+// ADC registers; shutdown is a keyed system command.
+class M5Pm1Power final : public hg::Power {
+ public:
+  bool begin(i2c_master_bus_handle_t bus);
+  std::optional<hg::PowerStatus> read() override { return chip_ ? chip_->read() : std::nullopt; }
+  bool power_off() override { return chip_ && chip_->power_off(); }
+
+ private:
+  i2c_master_dev_handle_t dev_ = nullptr;
+  std::unique_ptr<hg::M5Pm1> chip_;
 };
 
 class CoreS3Board {

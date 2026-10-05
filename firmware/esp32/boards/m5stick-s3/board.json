@@ -1,0 +1,6 @@
+{
+  "title": "M5Stick S3",
+  "summary": "135×240 ST7789P3 display, two buttons, ES8311 audio, M5PM1 power. Experimental.",
+  "docs": "docs/hardware.md#m5stick-s3",
+  "ready_made": true
+}

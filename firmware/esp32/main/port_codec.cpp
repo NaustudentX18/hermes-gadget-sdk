@@ -80,7 +80,7 @@ bool CodecAudio::begin(const CodecAudioConfig& cfg, i2c_master_bus_handle_t bus)
   es8311_codec_cfg_t dac = {};
   dac.ctrl_if = audio_codec_new_i2c_ctrl(&dac_i2c);
   dac.gpio_if = gpio_if;
-  dac.codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC;
+  dac.codec_mode = cfg.es8311_bidir ? ESP_CODEC_DEV_WORK_MODE_BOTH : ESP_CODEC_DEV_WORK_MODE_DAC;
   dac.pa_pin = static_cast<int16_t>(cfg.pa);
   dac.pa_reverted = false;
   dac.master_mode = false;
@@ -88,7 +88,7 @@ bool CodecAudio::begin(const CodecAudioConfig& cfg, i2c_master_bus_handle_t bus)
   dac.hw_gain.pa_voltage = cfg.amp_supply_v;
   dac.hw_gain.codec_dac_voltage = 3.3;
   esp_codec_dev_cfg_t out_cfg = {};
-  out_cfg.dev_type = ESP_CODEC_DEV_TYPE_OUT;
+  out_cfg.dev_type = cfg.es8311_bidir ? ESP_CODEC_DEV_TYPE_IN_OUT : ESP_CODEC_DEV_TYPE_OUT;
   if (cfg.speaker == SpeakerCodec::Aw88298) {
     aw88298_codec_cfg_t amp = {};
     amp.ctrl_if = dac.ctrl_if;
@@ -101,18 +101,24 @@ bool CodecAudio::begin(const CodecAudioConfig& cfg, i2c_master_bus_handle_t bus)
   out_cfg.data_if = data_if;
   out_ = out_cfg.codec_if ? esp_codec_dev_new(&out_cfg) : nullptr;
 
-  audio_codec_i2c_cfg_t adc_i2c = {};
-  adc_i2c.port = I2C_NUM_0;
-  adc_i2c.addr = ES7210_CODEC_DEFAULT_ADDR;
-  adc_i2c.bus_handle = bus;
-  es7210_codec_cfg_t adc = {};
-  adc.ctrl_if = audio_codec_new_i2c_ctrl(&adc_i2c);
-  adc.mic_selected = kMic1And2;
-  esp_codec_dev_cfg_t in_cfg = {};
-  in_cfg.dev_type = ESP_CODEC_DEV_TYPE_IN;
-  in_cfg.codec_if = es7210_codec_new(&adc);
-  in_cfg.data_if = data_if;
-  in_ = in_cfg.codec_if ? esp_codec_dev_new(&in_cfg) : nullptr;
+  if (cfg.es8311_bidir) {
+    // A single ES8311 carries both directions on one I2S bus; the same device
+    // handle serves capture and playback. There is no separate ES7210 ADC.
+    in_ = out_;
+  } else {
+    audio_codec_i2c_cfg_t adc_i2c = {};
+    adc_i2c.port = I2C_NUM_0;
+    adc_i2c.addr = ES7210_CODEC_DEFAULT_ADDR;
+    adc_i2c.bus_handle = bus;
+    es7210_codec_cfg_t adc = {};
+    adc.ctrl_if = audio_codec_new_i2c_ctrl(&adc_i2c);
+    adc.mic_selected = kMic1And2;
+    esp_codec_dev_cfg_t in_cfg = {};
+    in_cfg.dev_type = ESP_CODEC_DEV_TYPE_IN;
+    in_cfg.codec_if = es7210_codec_new(&adc);
+    in_cfg.data_if = data_if;
+    in_ = in_cfg.codec_if ? esp_codec_dev_new(&in_cfg) : nullptr;
+  }
 
   // Both stay open at one rate: they share the I2S clocks.
   esp_codec_dev_sample_info_t fs = {};

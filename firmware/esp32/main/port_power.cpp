@@ -29,4 +29,30 @@ bool AxpPower::begin(i2c_master_bus_handle_t bus) {
   return true;
 }
 
+bool M5Pm1Power::begin(i2c_master_bus_handle_t bus) {
+  if (!bus || i2c_master_probe(bus, 0x6E, 50) != ESP_OK) return false;
+  i2c_device_config_t cfg = {};
+  cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+  cfg.device_address = 0x6E;
+  cfg.scl_speed_hz = 100000;  // the M5PM1 boots at 100 kHz (M5PM1 library default)
+  if (i2c_master_bus_add_device(bus, &cfg, &dev_) != ESP_OK) return false;
+  chip_ = std::make_unique<hg::M5Pm1>(
+      [this](uint8_t reg, uint8_t* data, size_t size) {
+        return i2c_master_transmit_receive(dev_, &reg, 1, data, size, 50) == ESP_OK;
+      },
+      [this](uint8_t reg, uint8_t value) {
+        const uint8_t data[] = {reg, value};
+        return i2c_master_transmit(dev_, data, sizeof(data), 50) == ESP_OK;
+      });
+  // Read back the power source once to confirm the PMIC answers on the bus.
+  if (!chip_->read()) {
+    chip_.reset();
+    i2c_master_bus_rm_device(dev_);
+    dev_ = nullptr;
+    return false;
+  }
+  ESP_LOGI("hg.power", "M5PM1 reporting ready; battery voltage read over I2C");
+  return true;
+}
+
 }  // namespace hgp

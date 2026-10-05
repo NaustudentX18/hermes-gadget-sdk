@@ -23,6 +23,7 @@ idf_component_register(
         "port_latch_power.cpp"
         "../../drivers/axp2101.cpp"
         "../../drivers/cores3.cpp"
+        "../../drivers/m5pm1.cpp"
         "port_storage.cpp"
         "port_system.cpp"
         "port_touch.cpp"
